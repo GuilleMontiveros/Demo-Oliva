@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dulce Diagonal | Panel de Gestión para Distribuidora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        #orderScroll::-webkit-scrollbar { display: none; }
+        #orderScroll { scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Topbar estilo ERP -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-indigo-700 text-amber-300 font-black px-2.5 py-1 rounded text-lg tracking-wider">DULCE DIAGONAL</span>
+                <span class="text-xs text-indigo-200 hidden sm:inline">| Módulo Preventa & Facturación Distribuidora</span>
+            </div>
+            <div class="flex items-center space-x-4 text-xs">
+                <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Modo Preventa Activo
+                </span>
+                <span class="text-slate-300">Vendedor: <strong>G. Montiveros</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal: 2 Columnas -->
+    <main class="max-w-7xl mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 w-full">
+
+        <!-- Columna Izquierda: Búsqueda y Catálogo (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-3">
+            
+            <!-- Barra de configuración de venta rápida -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Cliente / Kiosco</label>
+                    <select id="clientSelect" onchange="switchClient()" class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500">
+                        <option value="1">Kiosco Central (Saldo: $42.500 | Límite: $150.000)</option>
+                        <option value="2">Maxikiosco 24hs (Saldo: $0 | Límite: $200.000)</option>
+                        <option value="3">Almacén Don Mario (Saldo: $89.000 | Bloqueado)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Lista de Precios</label>
+                    <select id="priceListSelect" onchange="renderCatalog()" class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500">
+                        <option value="lista1">Lista 1 - Kioscos & Comercios (Base)</option>
+                        <option value="lista2">Lista 2 - Mayorista / Bulto Cerrado (-12%)</option>
+                        <option value="lista3">Lista 3 - Cadenas & Subdistribución (-18%)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buscador y filtro de categorías -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                <div class="relative">
+                    <i class="fa-solid fa-barcode absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="renderCatalog()" placeholder="Buscar por código de barra o nombre (ej: Arcor, Gomitas, Mogul, Baggio)..."
+                        class="w-full pl-10 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <!-- Categorías -->
+                <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs" id="catBar">
+                    <button onclick="setCategory('todos')" class="cat-chip bg-indigo-900 text-white px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-bold">Todos</button>
+                    <button onclick="setCategory('Caramelos')" class="cat-chip bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-semibold hover:bg-slate-200">🍬 Caramelos & Gomitas</button>
+                    <button onclick="setCategory('Chocolates')" class="cat-chip bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-semibold hover:bg-slate-200">🍫 Chocolates & Alfajores</button>
+                    <button onclick="setCategory('Galletitas')" class="cat-chip bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-semibold hover:bg-slate-200">🍪 Galletitas & Snacks</button>
+                    <button onclick="setCategory('Bebidas')" class="cat-chip bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-semibold hover:bg-slate-200">🧃 Jugos & Bebidas</button>
+                </div>
+            </div>
+
+            <!-- Listado de Artículos (Simulación de catálogo de 1000 items) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+                <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 flex justify-between text-[11px] font-bold text-slate-500 uppercase">
+                    <span>Artículo / Presentación</span>
+                    <span>Stock & Precio Unit.</span>
+                </div>
+                <div id="catalogList" class="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+                    <!-- Filas inyectadas por JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Columna Derecha: Pedido actual, Cuenta Corriente y Cierre (5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-3">
+            
+            <!-- Resumen de cuenta del cliente seleccionado -->
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-xs text-indigo-950 flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-indigo-900" id="clientNameCard">Kiosco Central</p>
+                    <p class="text-[11px] text-indigo-700">CUIT: 20-33445566-9 | Cond: Monotributo</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">Deuda Cta. Cte.</span>
+                    <span class="font-bold text-sm text-red-600" id="clientBalance">$42.500</span>
+                </div>
+            </div>
+
+            <!-- Carrito de preventa -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col flex-1 p-3.5">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-receipt text-indigo-600"></i> Orden de Pedido
+                    </h3>
+                    <span id="itemsCounter" class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold">0 bultos</span>
+                </div>
+
+                <!-- Lista de ítems en pedido -->
+                <div id="orderItems" class="flex-1 divide-y divide-slate-100 max-h-72 overflow-y-auto py-1">
+                    <p class="text-center text-xs text-slate-400 py-10">No cargaste artículos todavía. Selecciona del catálogo a la izquierda.</p>
+                </div>
+
+                <!-- Totalizadores -->
+                <div class="border-t border-slate-200 pt-3 space-y-1.5 text-xs">
+                    <div class="flex justify-between text-slate-500">
+                        <span>Subtotal Neto:</span>
+                        <span id="subtotalDisplay" class="font-bold">$0</span>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                        <span>IVA Estimado (21%):</span>
+                        <span id="ivaDisplay" class="font-bold">$0</span>
+                    </div>
+                    <div class="flex justify-between text-base font-black text-slate-900 pt-1 border-t border-slate-100">
+                        <span>Total Pedido:</span>
+                        <span id="totalDisplay" class="text-indigo-700">$0</span>
+                    </div>
+                </div>
+
+                <!-- Opciones de Comprobante / Despacho -->
+                <div class="pt-3 space-y-2">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <label class="border border-slate-200 rounded-lg p-2 flex items-center gap-1.5 cursor-pointer hover:bg-slate-50">
+                            <input type="radio" name="docType" value="remito" checked class="text-indigo-600">
+                            <span class="font-bold">Remito R (Despacho)</span>
+                        </label>
+                        <label class="border border-slate-200 rounded-lg p-2 flex items-center gap-1.5 cursor-pointer hover:bg-slate-50">
+                            <input type="radio" name="docType" value="factura" class="text-indigo-600">
+                            <span class="font-bold">Factura B (ARCA)</span>
+                        </label>
+                    </div>
+                    
+                    <button onclick="confirmOrder()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-2.5 rounded-xl shadow transition text-xs flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Generar Hoja de Carga & Enviar Pedido</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Muestra de productos de alta rotación para distribuidora
+        const inventory = [
+            { id: 101, code: "7790580123", name: "Gomitas Mogul Ositos (Display x 12 u.)", cat: "Caramelos", pack: "Display x 12", stock: 84, basePrice: 7200 },
+            { id: 102, code: "7790580124", name: "Chupetín Mister Pop's Frutal (Bolsa x 24 u.)", cat: "Caramelos", pack: "Bolsa x 24", stock: 120, basePrice: 6800 },
+            { id: 103, code: "7790580125", name: "Caramelos Masticables Butter Toffees (Bolsa 800g)", cat: "Caramelos", pack: "Bolsa x 800g", stock: 45, basePrice: 8900 },
+            { id: 201, code: "7790580451", name: "Alfajor Bon o Bon Blanco (Caja x 18 u.)", cat: "Chocolates", pack: "Caja x 18", stock: 65, basePrice: 14200 },
+            { id: 202, code: "7790580452", name: "Chocolate Cofler Aireado 100g (Display x 14 u.)", cat: "Chocolates", pack: "Display x 14", stock: 32, basePrice: 22400 },
+            { id: 203, code: "7790580453", name: "Alfajor Guaymallén Triple Dulce de Leche (Caja x 24 u.)", cat: "Chocolates", pack: "Caja x 24", stock: 150, basePrice: 9600 },
+            { id: 301, code: "7790580881", name: "Galletitas Chocolinas 250g (Pack x 15 u.)", cat: "Galletitas", pack: "Fardo x 15", stock: 40, basePrice: 18500 },
+            { id: 302, code: "7790580882", name: "Papas Fritas Lays Clásicas 85g (Tira x 10 u.)", cat: "Galletitas", pack: "Tira x 10", stock: 28, basePrice: 16200 },
+            { id: 401, code: "7790580911", name: "Jugo Baggio Pronto Naranja 200ml (Pack x 18 u.)", cat: "Bebidas", pack: "Caja x 18", stock: 95, basePrice: 8100 },
+            { id: 402, code: "7790580912", name: "Bebida Energizante Speed 250ml (Pack x 24 u.)", cat: "Bebidas", pack: "Pack x 24", stock: 55, basePrice: 26500 }
+        ];
+
+        let cart = {};
+        let selectedCategory = "todos";
+
+        function getPriceMultiplier() {
+            const list = document.getElementById('priceListSelect').value;
+            if (list === 'lista2') return 0.88; // -12%
+            if (list === 'lista3') return 0.82; // -18%
+            return 1.0;
+        }
+
+        function formatMoney(num) {
+            return '$' + Math.round(num).toLocaleString('es-AR');
+        }
+
+        function setCategory(cat) {
+            selectedCategory = cat;
+            document.querySelectorAll('.cat-chip').forEach(btn => {
+                btn.className = "cat-chip bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-semibold hover:bg-slate-200";
+            });
+            event.target.className = "cat-chip bg-indigo-900 text-white px-3 py-1.5 rounded-full whitespace-nowrap text-[11px] font-bold";
+            renderCatalog();
+        }
+
+        function renderCatalog() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const list = document.getElementById('catalogList');
+            const mult = getPriceMultiplier();
+            list.innerHTML = '';
+
+            const filtered = inventory.filter(item => {
+                const matchCat = (selectedCategory === "todos" || item.cat === selectedCategory);
+                const matchSearch = (item.name.toLowerCase().includes(query) || item.code.includes(query));
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<p class="p-6 text-center text-xs text-slate-400">No se encontraron artículos.</p>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const finalPrice = item.basePrice * mult;
+                const inCartQty = cart[item.id] || 0;
+                const row = document.createElement('div');
+                row.className = "p-3 flex items-center justify-between hover:bg-slate-50 transition";
+                row.innerHTML = `
+                    <div class="pr-2">
+                        <span class="text-[10px] font-mono text-slate-400">${item.code}</span>
+                        <h4 class="text-xs font-bold text-slate-800 leading-tight">${item.name}</h4>
+                        <span class="text-[11px] text-slate-500">${item.pack} • <span class="${item.stock < 35 ? 'text-amber-600 font-bold' : 'text-slate-500'}">Stock: ${item.stock}</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <span class="text-xs font-black text-indigo-900 block">${formatMoney(finalPrice)}</span>
+                            <span class="text-[10px] text-slate-400">x bulto</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="changeQty(${item.id}, -1)" class="w-7 h-7 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300">-</button>
+                            <span class="text-xs font-bold w-6 text-center">${inCartQty}</span>
+                            <button onclick="changeQty(${item.id}, 1)" class="w-7 h-7 bg-indigo-700 text-white font-bold rounded-lg hover:bg-indigo-800">+</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+            updateOrderUI();
+        }
+
+        function changeQty(id, delta) {
+            const current = cart[id] || 0;
+            const updated = current + delta;
+            if (updated <= 0) {
+                delete cart[id];
+            } else {
+                cart[id] = updated;
+            }
+            renderCatalog();
+        }
+
+        function updateOrderUI() {
+            const container = document.getElementById('orderItems');
+            const mult = getPriceMultiplier();
+            let total = 0;
+            let totalBultos = 0;
+
+            const entries = Object.keys(cart);
+            if (entries.length === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-slate-400 py-10">No cargaste artículos todavía. Selecciona del catálogo a la izquierda.</p>`;
+                document.getElementById('itemsCounter').innerText = "0 bultos";
+                document.getElementById('subtotalDisplay').innerText = "$0";
+                document.getElementById('ivaDisplay').innerText = "$0";
+                document.getElementById('totalDisplay').innerText = "$0";
+                return;
+            }
+
+            container.innerHTML = '';
+            entries.forEach(id => {
+                const item = inventory.find(x => x.id == id);
+                const qty = cart[id];
+                const price = item.basePrice * mult;
+                const subtotal = price * qty;
+                total += subtotal;
+                totalBultos += qty;
+
+                const div = document.createElement('div');
+                div.className = "py-2 flex justify-between items-center text-xs";
+                div.innerHTML = `
+                    <div>
+                        <p class="font-bold text-slate-800">${item.name}</p>
+                        <p class="text-[11px] text-slate-500">${qty} bultos x ${formatMoney(price)}</p>
+                    </div>
+                    <span class="font-bold text-slate-900">${formatMoney(subtotal)}</span>
+                `;
+                container.appendChild(div);
+            });
+
+            const iva = total * 0.21;
+            document.getElementById('itemsCounter').innerText = `${totalBultos} bultos`;
+            document.getElementById('subtotalDisplay').innerText = formatMoney(total);
+            document.getElementById('ivaDisplay').innerText = formatMoney(iva);
+            document.getElementById('totalDisplay').innerText = formatMoney(total + iva);
+        }
+
+        function switchClient() {
+            const val = document.getElementById('clientSelect').value;
+            const nameCard = document.getElementById('clientNameCard');
+            const balanceCard = document.getElementById('clientBalance');
+
+            if (val === "1") {
+                nameCard.innerText = "Kiosco Central";
+                balanceCard.innerText = "$42.500";
+                balanceCard.className = "font-bold text-sm text-red-600";
+            } else if (val === "2") {
+                nameCard.innerText = "Maxikiosco 24hs";
+                balanceCard.innerText = "$0 (Al día)";
+                balanceCard.className = "font-bold text-sm text-emerald-600";
+            } else {
+                nameCard.innerText = "Almacén Don Mario";
+                balanceCard.innerText = "$89.000 (Excedido)";
+                balanceCard.className = "font-bold text-sm text-red-700";
+            }
+        }
+
+        function confirmOrder() {
+            if (Object.keys(cart).length === 0) {
+                alert("Carga al menos un artículo en el pedido para emitir la orden.");
+                return;
+            }
+            const doc = document.querySelector('input[name="docType"]:checked').value;
+            const total = document.getElementById('totalDisplay').innerText;
+            const docName = doc === 'remito' ? "Remito R de Despacho" : "Factura Electrónica B (CAE aprobado)";
+            alert(`¡Operación Exitosa!\n\nDocumento: ${docName}\nTotal registrado: ${total}\n\nLos bultos fueron descontados del depósito y la hoja de ruta fue generada para el repartidor.`);
+        }
+
+        renderCatalog();
+    </script>
+</body>
+</html>
